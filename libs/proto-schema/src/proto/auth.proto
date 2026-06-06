@@ -1,0 +1,71 @@
+// proto/auth.proto
+syntax = "proto3";
+
+package auth;
+
+// ── Service Definition ────────────────────────────
+service AuthService {
+  rpc Register    (RegisterRequest)      returns (AuthResponse);
+  rpc Login       (LoginRequest)         returns (AuthResponse);
+  rpc Logout      (LogoutRequest)        returns (LogoutResponse);
+  rpc VerifyToken (VerifyTokenRequest)   returns (VerifyTokenResponse);
+  rpc RefreshToken(RefreshTokenRequest)  returns (AuthResponse);
+}
+
+// ── Register ──────────────────────────────────────
+message RegisterRequest {
+  string name     = 1;
+  string email    = 2;
+  string password = 3;
+}
+
+// ── Login ─────────────────────────────────────────
+message LoginRequest {
+  string email    = 1;
+  string password = 2;
+}
+
+// ── Logout ────────────────────────────────────────
+message LogoutRequest {
+  string accessToken = 1;
+}
+
+message LogoutResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+// ── Verify Token ──────────────────────────────────
+message VerifyTokenRequest {
+  string token = 1;
+}
+
+message VerifyTokenResponse {
+  bool   valid     = 1;
+  string userId    = 2;
+  string email     = 3;
+  string role      = 4;
+  string message   = 5;
+}
+
+// ── Refresh Token ─────────────────────────────────
+message RefreshTokenRequest {
+  string refreshToken = 1;
+}
+
+// ── Shared Response ───────────────────────────────
+message AuthResponse {
+  bool   success      = 1;
+  string accessToken  = 2;
+  string refreshToken = 3;
+  string message      = 4;
+  UserData user       = 5;
+}
+
+message UserData {
+  string id        = 1;
+  string name      = 2;
+  string email     = 3;
+  string role      = 4;
+  string createdAt = 5;
+}

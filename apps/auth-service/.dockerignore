@@ -6,4 +6,3 @@ build
 .git
 .gitignore
 README.md
-Docker*

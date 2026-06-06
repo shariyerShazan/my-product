@@ -21,6 +21,28 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "paths": {}
+    "paths": {
+      "@app/kafka": [
+        "libs/kafka/src"
+      ],
+      "@app/kafka/*": [
+        "libs/kafka/src/*"
+      ],
+      "@app/prisma": [
+        "libs/prisma/src"
+      ],
+      "@app/prisma/*": [
+        "libs/prisma/src/*"
+      ],
+      "@app/proto-schema": [
+        "libs/proto-schema/src"
+      ],
+      "@app/proto-schema/*": [
+        "libs/proto-schema/src/*"
+      ],
+      "@auth-db/client": [
+        "apps/auth-service/prisma/generated/client"
+      ]
+    }
   }
 }

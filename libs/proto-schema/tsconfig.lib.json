@@ -1,9 +1,8 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./src",
-    "outDir": "../../dist/apps/api-gateway",
-    "declaration": false
+    "declaration": true,
+    "outDir": "../../dist/libs/proto-schema"
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "test", "**/*spec.ts"]
