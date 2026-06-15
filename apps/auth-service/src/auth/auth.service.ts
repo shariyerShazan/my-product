@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { AuthPrismaService } from '@app/prisma';
 import { Injectable, Logger } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
@@ -35,7 +31,7 @@ export class AuthService {
     const userExist = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
-    if (userExist) {
+    if (userExist && userExist.isEmailVerified) {
       throw new RpcException({
         code: 6,
         message: 'Email already Exist!',
@@ -45,56 +41,61 @@ export class AuthService {
       dto.password,
       Number(process.env.HASH_SOLT!),
     );
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email,
-        name: dto.name,
-        password: hashPass,
-      },
+
+    if (!userExist) {
+      await this.prisma.user.create({
+        data: {
+          name: dto.name,
+          email: dto.email,
+          password: hashPass,
+        },
+      });
+    } else {
+      await this.prisma.user.update({
+        where: { email: dto.email },
+        data: {
+          name: dto.name,
+          password: hashPass,
+        },
+      });
+    }
+
+    const otp = await this.redis.createOtp(dto.email);
+
+    await this.kafka.emit(KAFKA_TOPICS.USER_REGISTERED, {
+      email: dto.email,
+      name: dto.name,
+      otp,
     });
-
-    const payload = {
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-    };
-
-    const accessToken = this.tokens.generateAccessToken(payload);
-    const refreshToken = this.tokens.generateRefreshToken(payload);
-
-    const refreshTtl = this.tokens.getTokenTTL(refreshToken);
-    await this.redis.saveRefreshToken(user.id, refreshToken, refreshTtl);
-
-    const refreshTokenHash = await bcrypt.hash(
-      refreshToken,
-      Number(process.env.HASH_SOLT!),
-    );
-    await this.prisma.user.update({
-      where: { id: user.id },
-      data: {
-        refreshToken: refreshTokenHash,
-      },
-    });
-
-    await this.kafka.emit<UserRegisteredEvent>(KAFKA_TOPICS.USER_REGISTERED, {
-      userId: user.id,
-      email: user.email,
-      name: user.name,
-    });
-    this.logger.log(`User registered: ${user.email}`);
 
     return {
       success: true,
-      accessToken,
-      refreshToken,
-      message: 'Registration Successfully!',
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        createdAt: user.createdAt.toISOString(),
+      message: 'OTP sent successfully',
+    };
+  }
+
+  async verifyRegistration(email: string, otp: string) {
+    const valid = await this.redis.verifyOtp(email, otp);
+
+    if (!valid) {
+      throw new RpcException({
+        code: 16,
+        message: 'Invalid OTP',
+      });
+    }
+
+    await this.prisma.user.update({
+      where: { email },
+      data: {
+        isEmailVerified: true,
       },
+    });
+
+    await this.redis.deleteOtp(email);
+
+    return {
+      success: true,
+      message: 'Email verified successfully',
     };
   }
 
@@ -115,6 +116,12 @@ export class AuthService {
       throw new RpcException({
         code: 16,
         message: 'User not available with this email!',
+      });
+    }
+    if (!user.isEmailVerified) {
+      throw new RpcException({
+        code: 16,
+        message: 'Please verify your email first',
       });
     }
     const isValidPass = await bcrypt.compare(dto.password, user.password);

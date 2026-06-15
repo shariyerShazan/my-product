@@ -5,11 +5,17 @@ package auth;
 
 // ── Service Definition ────────────────────────────
 service AuthService {
-  rpc Register    (RegisterRequest)      returns (AuthResponse);
+  rpc Register    (RegisterRequest)      returns (BasicResponse);
+  rpc VerifyRegistration (VerifyRegistrationRequest)    returns (OtpVerificationResponse);
+  rpc ForgotPasswordRequest (ForgotPassRequest) returns (BasicResponse);
+  rpc ResetPassword (ResetPasswordRequest)    returns (OtpVerificationResponse);
   rpc Login       (LoginRequest)         returns (AuthResponse);
   rpc Logout      (LogoutRequest)        returns (LogoutResponse);
   rpc VerifyToken (VerifyTokenRequest)   returns (VerifyTokenResponse);
-  rpc RefreshToken(RefreshTokenRequest)  returns (AuthResponse);
+  rpc RefreshToken (RefreshTokenRequest)  returns (AuthResponse);
+  rpc ChangePassword (ChangePassRequest)  returns (BasicResponse);
+  rpc GetUserById (GetUserByIdRequest)    returns (UserResponse);
+  rpc GetUserByEmail (GetUserByEmailRequest) returns (UserResponse);
 }
 
 // ── Register ──────────────────────────────────────
@@ -17,6 +23,36 @@ message RegisterRequest {
   string name     = 1;
   string email    = 2;
   string password = 3;
+}
+
+message VerifyRegistrationRequest {
+  string email = 1;
+  string otp = 2;
+}
+
+message ResetPasswordRequest {
+  string email = 1;
+  string otp = 2;
+  string newPassword = 3;
+}
+
+message OtpVerificationResponse {
+  bool success  = 1;
+  string message = 2;
+}
+
+message ForgotPassRequest {
+  string email  =1;
+}
+
+message BasicResponse {
+  bool success = 1;
+  string message = 2;
+}
+
+message ChangePassRequest {
+  string oldPassword = 1;
+  string newPassword  = 2;
 }
 
 // ── Login ─────────────────────────────────────────
@@ -50,16 +86,33 @@ message VerifyTokenResponse {
 
 // ── Refresh Token ─────────────────────────────────
 message RefreshTokenRequest {
-  string refreshToken = 1;
+  string accessToken = 1;
+  string refreshToken = 2;
 }
 
 // ── Shared Response ───────────────────────────────
+
+message GetUserByIdRequest {
+  string userId = 1;
+}
+
+message GetUserByEmailRequest {
+  string email = 1;
+}
+
 message AuthResponse {
   bool   success      = 1;
   string accessToken  = 2;
   string refreshToken = 3;
   string message      = 4;
   UserData user       = 5;
+}
+
+
+message UserResponse {
+  bool success = 1;
+  string message = 2;
+  UserData user = 3;
 }
 
 message UserData {

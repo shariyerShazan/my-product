@@ -44,7 +44,6 @@ export class AuthService implements OnModuleInit {
       throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
     }
   }
-//
   async login(data: any) {
     try {
       return await firstValueFrom(this.authService.login(data));

@@ -12,6 +12,13 @@ export class RedisService implements OnModuleDestroy {
     });
   }
 
+  generateOtp(length = 6): string {
+    const min = Math.pow(10, length - 1);
+    const max = Math.pow(10, length) - 1;
+
+    return Math.floor(min + Math.random() * (max - min + 1)).toString();
+  }
+
   async blacklistToken(token: string, ttlsec: number) {
     await this.client.set(`blocklist:${token}`, '1', 'EX', ttlsec);
   }
@@ -54,5 +61,31 @@ export class RedisService implements OnModuleDestroy {
 
   async onModuleDestroy() {
     await this.client.quit();
+  }
+
+  async saveOtp(email: string, otp: string, ttl = 300) {
+    await this.client.set(`otp:${email}`, otp, 'EX', ttl);
+  }
+
+  async createOtp(email: string, ttl = 300): Promise<string> {
+    const otp = this.generateOtp();
+
+    await this.saveOtp(email, otp, ttl);
+
+    return otp;
+  }
+
+  async getOtp(email: string): Promise<string | null> {
+    return this.client.get(`otp:${email}`);
+  }
+
+  async verifyOtp(email: string, otp: string): Promise<boolean> {
+    const storedOtp = await this.getOtp(email);
+
+    return storedOtp === otp;
+  }
+
+  async deleteOtp(email: string) {
+    await this.client.del(`otp:${email}`);
   }
 }

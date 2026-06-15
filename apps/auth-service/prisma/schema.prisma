@@ -22,6 +22,7 @@ model User {
   role         Role     @default(USER)
   isVerified   Boolean  @default(false)
   refreshToken String?
+  isEmailVerified Boolean @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
