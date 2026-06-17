@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { AuthPrismaService } from '@app/prisma';
 import { Injectable, Logger } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
@@ -402,12 +403,9 @@ export class AuthService {
     };
   }
 
-  // আপনার বিদ্যমান AuthService এর ভেতর নিচের মেffডগুলো যোগ করুন:
-
   async getUserById(userId: string) {
     const cacheKey = `user:id:${userId}`;
 
-    // ১. চেক করুন ক্যাশে ডাটা আছে কি না
     const cachedUser = await this.redis.getCache<any>(cacheKey);
     if (cachedUser) {
       return {
@@ -417,7 +415,6 @@ export class AuthService {
       };
     }
 
-    // ২. ক্যাশে না থাকলে ডাটাবেজ থেকে আনুন
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
@@ -434,7 +431,6 @@ export class AuthService {
       createdAt: user.createdAt.toISOString(),
     };
 
-    // ৩. ক্যাশে ১ ঘণ্টার জন্য সেভ করে রাখুন
     await this.redis.setCache(cacheKey, userData, 3600);
 
     return {
@@ -447,7 +443,6 @@ export class AuthService {
   async getUserByEmail(email: string) {
     const cacheKey = `user:email:${email}`;
 
-    // ১. ক্যাশ চেক
     const cachedUser = await this.redis.getCache<any>(cacheKey);
     if (cachedUser) {
       return {
@@ -457,7 +452,6 @@ export class AuthService {
       };
     }
 
-    // ২. ডাটাবেজ কোয়েরি
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -474,7 +468,6 @@ export class AuthService {
       createdAt: user.createdAt.toISOString(),
     };
 
-    // ৩. ক্যাশ রাইট
     await this.redis.setCache(cacheKey, userData, 3600);
 
     return {
@@ -484,20 +477,37 @@ export class AuthService {
     };
   }
 
-  async getAllUsers() {
-    const cacheKey = 'users:all';
+  async getAllUsers(dto: { page: number; limit: number }) {
+    const page = dto.page > 0 ? dto.page : 1;
+    const limit = dto.limit > 0 ? dto.limit : 10;
 
-    const cachedUsers = await this.redis.getCache<any[]>(cacheKey);
-    if (cachedUsers) {
+    const skip = (page - 1) * limit;
+
+    const cacheKey = `users:all:page_${page}:limit_${limit}`;
+
+    const cachedData = await this.redis.getCache<{
+      users: any[];
+      total: number;
+    }>(cacheKey);
+    if (cachedData) {
       return {
         success: true,
         message: 'All users fetched from cache',
-        users: cachedUsers,
+        users: cachedData.users,
+        total: cachedData.total,
+        page,
+        limit,
       };
     }
-    const users = await this.prisma.user.findMany({
-      orderBy: { createdAt: 'desc' },
-    });
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.user.count(),
+    ]);
 
     const usersData = users.map((user) => ({
       id: user.id,
@@ -507,12 +517,18 @@ export class AuthService {
       createdAt: user.createdAt.toISOString(),
     }));
 
-    await this.redis.setCache(cacheKey, usersData, 600);
-
+    const responseData = {
+      users: usersData,
+      total: total,
+    };
+    await this.redis.setCache(cacheKey, responseData, 600);
     return {
       success: true,
       message: 'All users fetched successfully',
       users: usersData,
+      total,
+      page,
+      limit,
     };
   }
 }

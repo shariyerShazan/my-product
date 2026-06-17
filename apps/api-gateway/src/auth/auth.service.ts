@@ -22,6 +22,9 @@ interface AuthGrpcService {
   logout(data: any): any;
   verifyToken(data: any): any;
   refreshToken(data: any): any;
+  getUserById(data: any): any;
+  getUserByEmail(data: any): any;
+  getAllUsers(data: any): any;
 }
 
 @Injectable()
@@ -127,6 +130,37 @@ export class AuthService implements OnModuleInit {
     try {
       return await firstValueFrom(
         this.authService.refreshToken({ refreshToken }),
+      );
+    } catch (err: any) {
+      const message = err?.message ?? err?.details ?? JSON.stringify(err);
+      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getUserById(userId: any) {
+    try {
+      return await firstValueFrom(this.authService.getUserById(userId));
+    } catch (err: any) {
+      const message = err?.message ?? err?.details ?? JSON.stringify(err);
+      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+    }
+  }
+  async getUserByEmail(email: string) {
+    try {
+      return await firstValueFrom(this.authService.getUserByEmail(email));
+    } catch (err: any) {
+      const message = err?.message ?? err?.details ?? JSON.stringify(err);
+      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  async getAllUsers(page: number, limit: number) {
+    try {
+      return await firstValueFrom(
+        this.authService.getAllUsers({
+          page: page,
+          limit: limit,
+        }),
       );
     } catch (err: any) {
       const message = err?.message ?? err?.details ?? JSON.stringify(err);

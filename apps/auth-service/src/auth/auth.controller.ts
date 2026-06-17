@@ -62,4 +62,19 @@ export class AuthController {
   refreshToken(data: { refreshToken: string }) {
     return this.authService.refreshToken(data.refreshToken);
   }
+
+  @GrpcMethod('AuthService', 'GetUserById')
+  getUserById(data: { userId: string }) {
+    return this.authService.getUserById(data.userId);
+  }
+
+  @GrpcMethod('AuthService', 'GetUserByEmail')
+  getUserByEmail(data: { email: string }) {
+    return this.authService.getUserByEmail(data.email);
+  }
+
+  @GrpcMethod('AuthService', 'GetAllUsers')
+  getAllUsers(data: { page: number; limit: number }) {
+    return this.authService.getAllUsers(data);
+  }
 }

@@ -116,6 +116,10 @@ message AllUsersResponse {
   repeated UserData users = 3; 
 }
 
+message GetAllUsersRequest {
+  int32 page  = 1;
+  int32 limit = 2;
+}
 message UserData {
   string id        = 1;
   string name      = 2;

@@ -1,14 +1,18 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
+  Param,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -97,5 +101,68 @@ export class AuthController {
   @ApiBearerAuth()
   logout(@Req() req: Express.Request) {
     return this.authService.logout(req?.user?.userId);
+  }
+
+  @Get('me')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get current logged in user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Current user fetched successfully',
+  })
+  getMe(@Req() req: Express.Request) {
+    return this.authService.getUserById(req?.user?.userId);
+  }
+
+  @Get('users')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all users with pagination' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    type: Number,
+    description: 'Default is 1',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Default is 10',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Users fetched successfully',
+  })
+  getAllUsers(@Query('page') page?: string, @Query('limit') limit?: string) {
+    const pageNum = page ? parseInt(page, 10) : 1;
+    const limitNum = limit ? parseInt(limit, 10) : 10;
+
+    return this.authService.getAllUsers(pageNum, limitNum);
+  }
+
+  @Get('users/id/:userId')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user by id' })
+  @ApiResponse({
+    status: 200,
+    description: 'User fetched successfully',
+  })
+  getUserById(@Param('userId') userId: string) {
+    return this.authService.getUserById(userId);
+  }
+
+  @Get('users/email/:email')
+  @UseGuards(AuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get user by email' })
+  @ApiResponse({
+    status: 200,
+    description: 'User fetched successfully',
+  })
+  getUserByEmail(@Param('email') email: string) {
+    return this.authService.getUserByEmail(email);
   }
 }
