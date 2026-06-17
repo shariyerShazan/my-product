@@ -2,14 +2,17 @@ import { Injectable, OnModuleDestroy } from '@nestjs/common';
 import Redis from 'ioredis';
 
 @Injectable()
-export class RedisService implements OnModuleDestroy {
+export class AuthRedisService implements OnModuleDestroy {
   private client: Redis;
   constructor() {
     this.client = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT) || 6379,
+      host: process.env.AUTH_REDIS_HOST || 'localhost',
+      port: Number(process.env.AUTH_REDIS_PORT) || 6379,
       retryStrategy: (times) => Math.min(times * 200, 3000),
     });
+  }
+  async onModuleDestroy() {
+    await this.client.quit();
   }
 
   generateOtp(length = 6): string {
@@ -57,10 +60,6 @@ export class RedisService implements OnModuleDestroy {
 
   async resetLoginAttempts(email: string) {
     await this.client.del(`login:attempts:${email}`);
-  }
-
-  async onModuleDestroy() {
-    await this.client.quit();
   }
 
   async saveOtp(email: string, topic: string, otp: string, ttl = 300) {

@@ -1,0 +1,147 @@
+
+syntax = "proto3";
+
+package user;
+
+service UserService {
+  // Profile
+  rpc GetProfile      (GetProfileRequest)    returns (ProfileResponse);
+  rpc UpdateProfile   (UpdateProfileRequest) returns (ProfileResponse);
+  rpc DeleteAccount   (DeleteAccountRequest) returns (DeleteResponse);
+
+  // Follow System
+  rpc FollowUser      (FollowRequest)        returns (FollowResponse);
+  rpc UnfollowUser    (FollowRequest)        returns (FollowResponse);
+  rpc GetFollowers    (PaginationRequest)    returns (UsersListResponse);
+  rpc GetFollowing    (PaginationRequest)    returns (UsersListResponse);
+  rpc IsFollowing     (FollowRequest)        returns (IsFollowingResponse);
+
+  // Search & Suggest
+  rpc SearchUsers     (SearchRequest)        returns (UsersListResponse);
+  rpc GetSuggestions  (SuggestionRequest)    returns (UsersListResponse);
+
+  // Presence
+  rpc SetOnline       (PresenceRequest)      returns (PresenceResponse);
+  rpc SetOffline      (PresenceRequest)      returns (PresenceResponse);
+  rpc GetOnlineStatus (PresenceRequest)      returns (PresenceResponse);
+
+  // Internal — other services call করার জন্য
+  rpc GetUsersByIds   (GetUsersByIdsRequest) returns (UsersListResponse);
+  rpc GetFollowerIds  (GetFollowerIdsRequest)returns (FollowerIdsResponse);
+}
+
+// ── Profile Messages ──────────────────────────────
+message GetProfileRequest {
+  string userId      = 1;
+  string requesterId = 2;   // কে দেখছে (privacy check)
+}
+
+message UpdateProfileRequest {
+  string userId   = 1;
+  string name     = 2;
+  string bio      = 3;
+  string avatar   = 4;
+  string coverImg = 5;
+  string location = 6;
+  string website  = 7;
+  string birthDate= 8;
+}
+
+message DeleteAccountRequest {
+  string userId = 1;
+}
+
+message DeleteResponse {
+  bool   success = 1;
+  string message = 2;
+}
+
+// ── Follow Messages ───────────────────────────────
+message FollowRequest {
+  string followerId = 1;
+  string targetId   = 2;
+}
+
+message FollowResponse {
+  bool   success         = 1;
+  string message         = 2;
+  int32  followersCount  = 3;
+  bool   isFollowing     = 4;
+}
+
+message IsFollowingResponse {
+  bool isFollowing = 1;
+}
+
+message PaginationRequest {
+  string userId = 1;
+  int32  page   = 2;
+  int32  limit  = 3;
+}
+
+// ── Search Messages ───────────────────────────────
+message SearchRequest {
+  string query       = 1;
+  string requesterId = 2;
+  int32  page        = 3;
+  int32  limit       = 4;
+}
+
+message SuggestionRequest {
+  string userId = 1;
+  int32  limit  = 2;
+}
+
+// ── Presence Messages ─────────────────────────────
+message PresenceRequest {
+  string userId = 1;
+}
+
+message PresenceResponse {
+  bool   isOnline  = 1;
+  int64  lastSeen  = 2;
+}
+
+// ── Shared Messages ───────────────────────────────
+message UserProfile {
+  string id             = 1;
+  string name           = 2;
+  string email          = 3;
+  string bio            = 4;
+  string avatar         = 5;
+  string coverImg       = 6;
+  string location       = 7;
+  string website        = 8;
+  string birthDate      = 9;
+  int32  followersCount = 10;
+  int32  followingCount = 11;
+  int32  postsCount     = 12;
+  bool   isFollowing    = 13;
+  bool   isOnline       = 14;
+  string createdAt      = 15;
+}
+
+message ProfileResponse {
+  bool        success = 1;
+  string      message = 2;
+  UserProfile user    = 3;
+}
+
+message UsersListResponse {
+  bool              success = 1;
+  repeated UserProfile users= 2;
+  int32             total   = 3;
+  int32             page    = 4;
+}
+
+message GetUsersByIdsRequest {
+  repeated string userIds = 1;
+}
+
+message GetFollowerIdsRequest {
+  string userId = 1;
+}
+
+message FollowerIdsResponse {
+  repeated string followerIds = 1;
+}

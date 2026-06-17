@@ -1,10 +1,9 @@
 
-
 services:
   # ── Databases ──────────────────────────────────
   auth-postgres-primary:
     image: postgres:17
-    container_name: fb_postgres
+    container_name: product_postgres_auth
     ports:
       - "5432:5432"
     environment:
@@ -14,9 +13,21 @@ services:
     volumes:
       - auth-postgres-primary_data:/var/lib/postgresql/data
 
+  user-postgres-primary:
+    image: postgres:17
+    container_name: product_postgres_user
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+      POSTGRES_DB: user_db
+    volumes:
+      - user-postgres-primary_data:/var/lib/postgresql/data
+
   mongodb:
     image: mongo:7
-    container_name: fb_mongo
+    container_name: product_mongo
     ports:
       - "27017:27017"
     environment:
@@ -31,9 +42,9 @@ services:
       retries: 5
 
   # ── Redis ──────────────────────────────────────
-  redis:
+  auth_redis:
     image: redis:7-alpine
-    container_name: fb_redis
+    container_name: product_redis_auth
     ports:
       - "6379:6379"
     command: >
@@ -42,7 +53,25 @@ services:
       --maxmemory-policy allkeys-lru
       --appendonly yes
     volumes:
-      - redis_data:/data
+      - auth_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  user_redis:
+    image: redis:7-alpine
+    container_name: product_redis_user
+    ports:
+      - "6378:6379"
+    command: >
+      redis-server
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+    volumes:
+      - user_redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -52,7 +81,7 @@ services:
   # ── Kafka ──────────────────────────────────────
   kafka:
     image: confluentinc/cp-kafka:7.6.0
-    container_name: fb_kafka
+    container_name: product_kafka
     ports:
       - "9092:9092"
 
@@ -84,7 +113,7 @@ services:
   # ── Kafka UI ───────────────────────────────────
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
-    container_name: fb_kafka_ui
+    container_name: product_kafka_ui
     ports:
       - "8080:8080"
     environment:
@@ -100,7 +129,7 @@ services:
   #   build:
   #     context: .
   #     dockerfile: apps/auth-service/Dockerfile
-  #   container_name: fb_auth
+  #   container_name: product_auth
   #   ports:
   #     - "3001:3001"
   #   environment:
@@ -108,20 +137,47 @@ services:
 
   #     # Write operations
   #     - AUTH_DB_PRIMARY_UR=postgresql://postgres:postgres123@auth-postgres-primary:5432/auth_db
-  #     - REDIS_HOST=redis
+  #     - AUTH_REDIS_HOST=auth_redis
   #     - JWT_ACCESS_SECRET=supersecret
   #     - KAFKA_BROKERS=kafka:9092
 
   #   depends_on:
   #     auth-postgres-primary:
   #       condition: service_started
-  #     redis:
+  #     auth_redis:
+  #       condition: service_healthy
+  #     kafka:
+  #       condition: service_healthy
+
+
+  # user-service:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/user-service/Dockerfile
+  #   container_name: product_user
+  #   ports:
+  #     - "3002:3002"
+  #   environment:
+  #     - GRPC_PORT=3002
+
+  #     # Write operations
+  #     - USER_DB_PRIMARY_UR=postgresql://postgres:postgres123@user-postgres-primary:5432/user_db
+  #     - USER_REDIS_HOST=user_redis
+  #     - JWT_ACCESS_SECRET=supersecret
+  #     - KAFKA_BROKERS=kafka:9092
+
+  #   depends_on:
+  #     auth-postgres-primary:
+  #       condition: service_started
+  #     user_redis:
   #       condition: service_healthy
   #     kafka:
   #       condition: service_healthy
 
 volumes:
   auth-postgres-primary_data:
+  user-postgres-primary_data:
   mongo_data:
-  redis_data:
+  auth_redis_data:
+  user_redis_data:
   kafka_data:

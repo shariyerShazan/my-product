@@ -16,7 +16,7 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { AuthService } from './auth.service';
+import { AuthService } from './auth.clinet';
 import {
   AuthGuard,
   ChangePasswordDto,

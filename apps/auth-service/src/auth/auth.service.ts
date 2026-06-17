@@ -2,7 +2,7 @@
 import { AuthPrismaService } from '@app/prisma';
 import { Injectable, Logger } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
-import { RedisService } from '../redis/redis.service';
+import { AuthRedisService } from '../redis/redis.service';
 import { KAFKA_TOPICS, KafkaService } from '@app/kafka';
 import { RpcException } from '@nestjs/microservices';
 import bcrypt from 'bcrypt';
@@ -31,7 +31,7 @@ export class AuthService {
   constructor(
     private readonly prisma: AuthPrismaService,
     private tokens: TokenService,
-    private redis: RedisService,
+    private redis: AuthRedisService,
     private kafka: KafkaService,
   ) {}
 

@@ -1,11 +1,9 @@
-/* eslint-disable @typescript-eslint/no-unsafe-call */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/auth-client';
+import { PrismaClient } from '@prisma/user-client';
 
 @Injectable()
-export class AuthPrismaService
+export class UserPrismaService
   extends PrismaClient
   implements OnModuleInit, OnModuleDestroy
 {
