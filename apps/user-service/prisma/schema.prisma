@@ -13,25 +13,43 @@ datasource db {
   provider = "postgresql"
 }
 
-
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  email        String   @unique
-  password     String
-  role         Role     @default(USER)
-  isVerified   Boolean  @default(false)
-  refreshToken String?
-  isEmailVerified Boolean @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id             String   @id @default(uuid())
+  email          String   @unique
+  name           String
+  bio            String?
+  avatar         String?
+  coverImg       String?
+  location       String?
+  website        String?
+  birthDate      DateTime?
+  followersCount Int      @default(0)
+  followingCount Int      @default(0)
+  postsCount     Int      @default(0)
+  isVerified     Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  followers  Follow[] @relation("Following")
+  following  Follow[] @relation("Follower")
 
   @@index([email])
+  @@index([name])
   @@map("users")
 }
 
-enum Role {
-  USER
-  ADMIN
-  MODERATOR
+model Follow {
+  id          String   @id @default(uuid())
+  followerId  String
+  followingId String
+  createdAt   DateTime @default(now())
+
+  follower  User @relation("Follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
 }

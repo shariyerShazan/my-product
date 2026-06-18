@@ -11,6 +11,9 @@ export const KAFKA_TOPICS = {
   USER_LOGIN: 'user.login',
   USER_FORGOT_PASS_REQUEST: 'user.forgot-pass-request',
 
+  // USER OR PROFILE
+  USER_PROFILE_CREATED: 'user.profile-created',
+
   //EVENT EVENTS
   EVENT_CREATED: 'event.created',
   EVENT_UPDATED: 'event.updated',

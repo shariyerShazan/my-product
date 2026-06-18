@@ -10,4 +10,7 @@ export * from './dto/auth/verify-registration-dto';
 export * from './dto/auth/forgot-password-dto';
 export * from './dto/auth/chnage-password-dto';
 
+// user dto's
+export * from './dto/user/update-user.dto';
+
 export * from './guard/auth-guard';

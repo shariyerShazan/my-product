@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TokenService } from './token.service';
 import { JwtModule } from '@nestjs/jwt';
-import { RedisService } from '../redis/redis.service';
+import { AuthRedisService } from '../redis/redis.service';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { RedisService } from '../redis/redis.service';
       }),
     }),
   ],
-  providers: [TokenService, RedisService],
+  providers: [TokenService, AuthRedisService],
   exports: [TokenService],
 })
 export class TokenModule {}

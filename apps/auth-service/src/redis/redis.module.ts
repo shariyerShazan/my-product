@@ -5,4 +5,4 @@ import { AuthRedisService } from './redis.service';
   providers: [AuthRedisService],
   exports: [AuthRedisService],
 })
-export class RedisModule {}
+export class AuthRedisModule {}

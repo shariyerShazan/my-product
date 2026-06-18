@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import { Injectable } from '@nestjs/common';
 import { JwtService, JwtSignOptions } from '@nestjs/jwt';
-import { RedisService } from '../redis/redis.service';
+import { AuthRedisService } from '../redis/redis.service';
 
 export interface TokenPayload {
   userId: string;
@@ -13,7 +13,7 @@ export interface TokenPayload {
 export class TokenService {
   constructor(
     private readonly jwt: JwtService,
-    private readonly redis: RedisService,
+    private readonly redis: AuthRedisService,
   ) {}
 
   generateAccessToken(payload: TokenPayload): string {
