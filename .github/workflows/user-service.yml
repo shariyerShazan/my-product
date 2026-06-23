@@ -49,6 +49,9 @@ jobs:
         run: npm install
 
       - name: Generate Auth Prisma Client
+        run: npm run auth:prisma:generate
+
+      - name: Generate User Prisma Client
         run: npm run user:prisma:generate
 
       - name: Build User Service
