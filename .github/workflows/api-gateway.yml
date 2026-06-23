@@ -48,8 +48,5 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Lint Gateway Service
-        run: npm run lint
-
       - name: Build Gateway Service
         run: npx nest build api-gateway

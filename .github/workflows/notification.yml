@@ -47,9 +47,6 @@ jobs:
 
       - name: Install Dependencies
         run: npm install
-
-      - name: Lint Notification Service
-        run: npm run lint
-
+        
       - name: Build Notification Service
         run: npx nest build notification

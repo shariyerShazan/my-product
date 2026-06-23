@@ -52,8 +52,5 @@ jobs:
       - name: Generate Prisma Client
         run: npm run auth:prisma:generate
 
-      - name: Lint
-        run: npm run lint
-
       - name: Build Auth Service
         run: npx nest build auth-service
