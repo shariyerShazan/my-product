@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import { AuthPrismaService } from '@app/prisma';
 import { Injectable, Logger } from '@nestjs/common';
 import { TokenService } from '../token/token.service';
 import { AuthRedisService } from '../redis/redis.service';
@@ -11,9 +10,11 @@ import {
   ForgotPassDto,
   LoginDto,
   RegisterDto,
+  ResetPasswordDto,
   VerifyRegistrationDto,
 } from '@app/common';
-import { ResetPasswordDto } from '@app/common/dto/auth/reset-password-dto';
+import { AtuhPrismaService } from '../prisma/prisma.service';
+
 export interface UserRegisteredEvent {
   userId: string;
   email: string;
@@ -29,7 +30,7 @@ export class AuthService {
   private logger = new Logger(AuthService.name);
 
   constructor(
-    private readonly prisma: AuthPrismaService,
+    private readonly prisma: AtuhPrismaService,
     private tokens: TokenService,
     private redis: AuthRedisService,
     private kafka: KafkaService,

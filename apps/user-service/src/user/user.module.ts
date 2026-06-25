@@ -5,7 +5,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UserRedisModule } from '../redis/redis.module';
 import { KafkaModule } from '@app/kafka';
-import { PrismaModule } from '@app/prisma';
+import { UserPrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { PrismaModule } from '@app/prisma';
     ConfigModule.forRoot({ isGlobal: true }),
     UserRedisModule,
     KafkaModule.register('user-service'),
-    PrismaModule,
+    UserPrismaModule,
   ],
   controllers: [UserController],
   providers: [UserService],

@@ -6,9 +6,9 @@ import {
   ForgotPassDto,
   LoginDto,
   RegisterDto,
+  ResetPasswordDto,
   VerifyRegistrationDto,
 } from '@app/common';
-import { ResetPasswordDto } from '@app/common/dto/auth/reset-password-dto';
 
 @Controller('auth')
 export class AuthController {

@@ -9,6 +9,7 @@ export * from './dto/auth/refresh-dto';
 export * from './dto/auth/verify-registration-dto';
 export * from './dto/auth/forgot-password-dto';
 export * from './dto/auth/chnage-password-dto';
+export * from './dto/auth/reset-password-dto';
 
 // user dto's
 export * from './dto/user/update-user.dto';

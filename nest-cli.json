@@ -56,15 +56,6 @@
         "tsConfigPath": "apps/notification/tsconfig.app.json"
       }
     },
-    "prisma": {
-      "type": "library",
-      "root": "libs/prisma",
-      "entryFile": "index",
-      "sourceRoot": "libs/prisma/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/prisma/tsconfig.lib.json"
-      }
-    },
     "proto-schema": {
       "type": "library",
       "root": "libs/proto-schema",

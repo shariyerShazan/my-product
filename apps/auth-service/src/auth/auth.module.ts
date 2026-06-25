@@ -5,8 +5,8 @@ import { AuthController } from './auth.controller';
 import { AuthRedisModule } from '../redis/redis.module';
 import { TokenModule } from '../token/token.module';
 import { KafkaModule } from '@app/kafka';
-import { PrismaModule } from '@app/prisma';
 import { JwtModule } from '@nestjs/jwt';
+import { AuthPrismaModule } from '../prisma/prisma.module';
 
 @Module({
   imports: [
@@ -15,7 +15,7 @@ import { JwtModule } from '@nestjs/jwt';
     AuthRedisModule,
     TokenModule,
     KafkaModule.register('auth-service'),
-    PrismaModule,
+    AuthPrismaModule,
   ],
   providers: [AuthService],
   controllers: [AuthController],

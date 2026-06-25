@@ -4,8 +4,8 @@ import { KAFKA_TOPICS, KafkaService } from '@app/kafka';
 import { Injectable, Logger } from '@nestjs/common';
 import { RpcException } from '@nestjs/microservices';
 import { UserRedisService } from '../redis/redis.service';
-import { UserPrismaService } from '@app/prisma';
 import { UpdateProfileDto } from '@app/common';
+import { UserPrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class UserService {
