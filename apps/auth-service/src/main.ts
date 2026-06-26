@@ -1,18 +1,15 @@
-/* eslint-disable @typescript-eslint/no-unsafe-argument */
-/* eslint-disable @typescript-eslint/no-unsafe-call */
 import { NestFactory } from '@nestjs/core';
-import { AuthModule } from './auth/auth.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 import { join } from 'path';
 import { GrpcExceptionFilter } from '@app/common';
+import { AppModule } from './app.module';
 
 const grpcPort = Number(process.env.AUTH_GRPC_PORT) || 3001;
 
 async function bootstrap() {
-  const logger = new Logger('AuthService');
   const app = await NestFactory.createMicroservice<MicroserviceOptions>(
-    AuthModule,
+    AppModule,
     {
       transport: Transport.GRPC,
       options: {
@@ -45,8 +42,6 @@ async function bootstrap() {
   );
 
   await app.listen();
-  logger.log(
-    `Auth Service running on port ${process.env.AUTH_GRPC_PORT || 5001}`,
-  );
+  console.log(`Auth server is running on: http://localhost:${grpcPort}`);
 }
 bootstrap();

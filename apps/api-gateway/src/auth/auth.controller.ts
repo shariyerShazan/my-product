@@ -112,7 +112,7 @@ export class AuthController {
     description: 'Current user fetched successfully',
   })
   getMe(@Req() req: Express.Request) {
-    return this.authClient.getUserById(req?.user?.userId);
+    return this.authClient.getMe(req?.user?.userId);
   }
 
   @Get('users')

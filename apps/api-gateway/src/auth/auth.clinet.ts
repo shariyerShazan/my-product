@@ -12,6 +12,7 @@ import { Client, Transport } from '@nestjs/microservices';
 import type { ClientGrpc } from '@nestjs/microservices';
 import { join } from 'path';
 import { firstValueFrom } from 'rxjs';
+import { UserClient } from '../user/user.client';
 
 interface AuthGrpcService {
   register(data: any): any;
@@ -30,6 +31,8 @@ interface AuthGrpcService {
 
 @Injectable()
 export class AuthClient implements OnModuleInit {
+  constructor(private readonly userClient: UserClient) {}
+
   @Client({
     transport: Transport.GRPC,
     options: {
@@ -140,15 +143,31 @@ export class AuthClient implements OnModuleInit {
 
   async getUserById(userId: any) {
     try {
-      return await firstValueFrom(this.authService.getUserById(userId));
+      return await firstValueFrom(this.authService.getUserById({ userId }));
     } catch (err: any) {
       const message = err?.message ?? err?.details ?? JSON.stringify(err);
       throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
     }
   }
+
+  async getMe(userId: string) {
+    try {
+      const authUser = await this.getUserById(userId);
+      const profile = await this.userClient.getProfile(userId, userId);
+
+      return {
+        ...(authUser as Record<string, unknown>),
+        profile,
+      };
+    } catch (err: any) {
+      const message = err?.message ?? err?.details ?? JSON.stringify(err);
+      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+    }
+  }
+
   async getUserByEmail(email: string) {
     try {
-      return await firstValueFrom(this.authService.getUserByEmail(email));
+      return await firstValueFrom(this.authService.getUserByEmail({ email }));
     } catch (err: any) {
       const message = err?.message ?? err?.details ?? JSON.stringify(err);
       throw new HttpException({ message }, HttpStatus.BAD_REQUEST);

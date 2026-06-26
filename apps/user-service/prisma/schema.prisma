@@ -13,8 +13,8 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id             String   @id @default(uuid())
+model Profile {
+  id             String   @id
   email          String   @unique
   name           String
   bio            String?
@@ -36,7 +36,7 @@ model User {
 
   @@index([email])
   @@index([name])
-  @@map("users")
+  @@map("profiles")
 }
 
 model Follow {
@@ -45,8 +45,8 @@ model Follow {
   followingId String
   createdAt   DateTime @default(now())
 
-  follower  User @relation("Follower",  fields: [followerId],  references: [id], onDelete: Cascade)
-  following User @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+  follower  Profile @relation("Follower",  fields: [followerId],  references: [id], onDelete: Cascade)
+  following Profile @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
 
   @@unique([followerId, followingId])
   @@index([followerId])

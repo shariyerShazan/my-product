@@ -51,23 +51,21 @@ export class AuthService {
       Number(process.env.HASH_SOLT!),
     );
 
-    if (!userExist) {
-      await this.prisma.user.create({
-        data: {
-          name: dto.name,
-          email: dto.email,
-          password: hashPass,
-        },
-      });
-    } else {
-      await this.prisma.user.update({
-        where: { email: dto.email },
-        data: {
-          name: dto.name,
-          password: hashPass,
-        },
-      });
-    }
+    const authUser = !userExist
+      ? await this.prisma.user.create({
+          data: {
+            name: dto.name,
+            email: dto.email,
+            password: hashPass,
+          },
+        })
+      : await this.prisma.user.update({
+          where: { email: dto.email },
+          data: {
+            name: dto.name,
+            password: hashPass,
+          },
+        });
 
     const otp = await this.redis.createOtp(
       dto.email,
@@ -75,14 +73,20 @@ export class AuthService {
     );
 
     await this.kafka.emit(KAFKA_TOPICS.USER_REGISTERED, {
-      email: dto.email,
-      name: dto.name,
+      userId: authUser.id,
+      email: authUser.email,
+      name: authUser.name,
+    });
+
+    await this.kafka.emit(KAFKA_TOPICS.SEND_REGISTRATION_OTP, {
+      email: authUser.email,
+      name: authUser.name,
       otp,
     });
 
     return {
       success: true,
-      message: 'Registraed. Verify Your otp!',
+      message: 'Registered. Verify Your otp!',
     };
   }
 

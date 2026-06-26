@@ -17,6 +17,23 @@ export class UserService {
     private kafka: KafkaService,
   ) {}
 
+  async createUser(data: { userId: string; email: string; name: string }) {
+    await this.prisma.profile.upsert({
+      where: {
+        id: data.userId,
+      },
+      update: {
+        name: data.name,
+        email: data.email,
+      },
+      create: {
+        id: data.userId,
+        name: data.name,
+        email: data.email,
+      },
+    });
+  }
+
   // ── Get Profile ───────────────────────────────
   async getProfile(userId: string, requesterId: string) {
     // Cache check
@@ -30,7 +47,7 @@ export class UserService {
       return this.buildResponse({ ...cached, isFollowing, isOnline });
     }
 
-    const user = await this.prisma.user.findUnique({
+    const user = await this.prisma.profile.findUnique({
       where: { id: userId },
     });
 
@@ -76,7 +93,7 @@ export class UserService {
 
   // ── Update Profile ────────────────────────────
   async updateProfile(userId: string, data: UpdateProfileDto) {
-    const user = await this.prisma.user.update({
+    const user = await this.prisma.profile.update({
       where: { id: userId },
       data: {
         ...(data.name && { name: data.name }),
@@ -145,11 +162,11 @@ export class UserService {
       this.prisma.follow.create({
         data: { followerId, followingId: targetId },
       }),
-      this.prisma.user.update({
+      this.prisma.profile.update({
         where: { id: targetId },
         data: { followersCount: { increment: 1 } },
       }),
-      this.prisma.user.update({
+      this.prisma.profile.update({
         where: { id: followerId },
         data: { followingCount: { increment: 1 } },
       }),
@@ -160,7 +177,7 @@ export class UserService {
     await this.redis.invalidateProfile(targetId);
     await this.redis.invalidateProfile(followerId);
 
-    const follower = await this.prisma.user.findUnique({
+    const follower = await this.prisma.profile.findUnique({
       where: { id: followerId },
       select: { name: true },
     });
@@ -208,11 +225,11 @@ export class UserService {
           },
         },
       }),
-      this.prisma.user.update({
+      this.prisma.profile.update({
         where: { id: targetId },
         data: { followersCount: { decrement: 1 } },
       }),
-      this.prisma.user.update({
+      this.prisma.profile.update({
         where: { id: followerId },
         data: { followingCount: { decrement: 1 } },
       }),
@@ -334,7 +351,7 @@ export class UserService {
 
     const skip = (page - 1) * limit;
 
-    const users = await this.prisma.user.findMany({
+    const users = await this.prisma.profile.findMany({
       where: {
         OR: [
           { name: { contains: query, mode: 'insensitive' } },
@@ -390,7 +407,7 @@ export class UserService {
       return this.getPopularUsers(userId, limit);
     }
 
-    const suggestions = await this.prisma.user.findMany({
+    const suggestions = await this.prisma.profile.findMany({
       where: {
         AND: [
           { id: { not: userId } },
@@ -451,7 +468,7 @@ export class UserService {
   }
 
   async getUsersByIds(userIds: string[]) {
-    const users = await this.prisma.user.findMany({
+    const users = await this.prisma.profile.findMany({
       where: { id: { in: userIds } },
     });
 
@@ -523,7 +540,7 @@ export class UserService {
   }
 
   private async getPopularUsers(userId: string, limit: number) {
-    const users = await this.prisma.user.findMany({
+    const users = await this.prisma.profile.findMany({
       where: { id: { not: userId } },
       take: limit,
       orderBy: { followersCount: 'desc' },

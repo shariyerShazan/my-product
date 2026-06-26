@@ -1,26 +1,24 @@
 import { NestFactory } from '@nestjs/core';
-import { NotificationModule } from './notification.module';
 import { Transport } from '@nestjs/microservices';
 import {
   KAFKA_BROKERS,
-  KAFKA_CLIENT_ID,
-  KAFKA_CONSUMER_GROUP,
+  KAFKA_CLIENT_IDS,
+  KAFKA_CONSUMER_GROUPS,
 } from '@app/kafka';
-import { Logger } from '@nestjs/common';
+import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const logger = new Logger('Notification');
-  const app = await NestFactory.create(NotificationModule);
+  const app = await NestFactory.create(AppModule);
 
   app.connectMicroservice({
     transport: Transport.KAFKA,
     options: {
       client: {
-        clientId: KAFKA_CLIENT_ID,
+        clientId: KAFKA_CLIENT_IDS.NOTIFICATION,
         brokers: [KAFKA_BROKERS],
       },
       consumer: {
-        groupId: KAFKA_CONSUMER_GROUP,
+        groupId: KAFKA_CONSUMER_GROUPS.NOTIFICATION,
       },
     },
   });
@@ -28,9 +26,7 @@ async function bootstrap() {
   await app.startAllMicroservices();
   const port = Number(process.env.NOTIFICATION_PORT!) || 3010;
   await app.listen(port);
-  logger.log(
-    `Notification Service running on port ${process.env.NOTIFICATION_PORT || 3010}`,
-  );
+  console.log(`🚀 Notification server is running on: http://localhost:${port}`);
 }
 
 bootstrap();

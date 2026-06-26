@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
 import { NotificationController } from './notification.controller';
-import { NotificationService } from './notification.service';
-import { EmailModule } from './email/email.module';
+import { NotificationService } from '../notification/notification.service';
 import { NotificationConsumer } from './notification.consumer';
-import { ConfigModule } from '@nestjs/config';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-  imports: [EmailModule, ConfigModule.forRoot({ isGlobal: true })],
+  imports: [EmailModule],
   controllers: [NotificationController, NotificationConsumer],
   providers: [NotificationService],
 })

@@ -1,21 +1,18 @@
 import { Module } from '@nestjs/common';
 import { UserController } from './user.controller';
 import { UserService } from './user.service';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigModule } from '@nestjs/config';
 import { UserRedisModule } from '../redis/redis.module';
-import { KafkaModule } from '@app/kafka';
 import { UserPrismaModule } from '../prisma/prisma.module';
+import { UserConsumer } from './user.consumer';
+import { KafkaModule } from '@app/kafka';
 
 @Module({
   imports: [
-    JwtModule.register({ global: true }),
-    ConfigModule.forRoot({ isGlobal: true }),
     UserRedisModule,
-    KafkaModule.register('user-service'),
     UserPrismaModule,
+    KafkaModule.register('user-service'),
   ],
-  controllers: [UserController],
+  controllers: [UserController, UserConsumer],
   providers: [UserService],
 })
 export class UserModule {}

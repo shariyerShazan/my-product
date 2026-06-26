@@ -29,6 +29,8 @@ async function bootstrap() {
 
   const port = Number(process.env.API_GATEWAY_PORT!) || 3000;
   await app.listen(port ?? 3000);
-  console.log(`🚀 Server is running on: http://localhost:${port}/docs`);
+  console.log(
+    `Api-gateway Server is running on: http://localhost:${port}/docs`,
+  );
 }
 bootstrap();

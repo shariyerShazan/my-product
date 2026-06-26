@@ -1,13 +1,13 @@
 import { Controller } from '@nestjs/common';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { EmailService } from './email/email.service';
 import { KAFKA_TOPICS } from '@app/kafka';
+import { EmailService } from '../email/email.service';
 
 @Controller()
 export class NotificationConsumer {
   constructor(private readonly emailService: EmailService) {}
 
-  @EventPattern(KAFKA_TOPICS.USER_REGISTERED)
+  @EventPattern(KAFKA_TOPICS.SEND_REGISTRATION_OTP)
   async handleUserRegistered(
     @Payload() data: { email: string; name: string; otp: string },
   ) {
