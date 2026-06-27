@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './user/user.module';
+import { RateLimiterModule } from './rateLimit/rateLimit.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { UserModule } from './user/user.module';
     }),
     ConfigModule.forRoot({ isGlobal: true }),
     UserModule,
+    RateLimiterModule,
   ],
 })
 export class AppModule {}

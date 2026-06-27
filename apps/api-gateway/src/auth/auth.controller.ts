@@ -28,13 +28,20 @@ import {
 } from '@app/common';
 import * as Express from 'express';
 import { ResetPasswordDto } from '@app/common/dto/auth/reset-password-dto';
+import { RateLimitGuard } from '../rateLimit/guard/rate-limit.guard';
+import {
+  RateLimit,
+  RateLimitKeyType,
+} from '../rateLimit/decorator/rate-limit.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
+@UseGuards(RateLimitGuard)
 export class AuthController {
   constructor(private readonly authClient: AuthClient) {}
 
   @Post('register')
+  @RateLimit(5, 60, { key: RateLimitKeyType.IP_EMAIL })
   @ApiOperation({ summary: 'Register user' })
   @ApiResponse({ status: 201, description: 'User registered successfully' })
   register(@Body() dto: RegisterDto) {
@@ -42,6 +49,7 @@ export class AuthController {
   }
 
   @Post('verify-registration')
+  @RateLimit(5, 60, { key: RateLimitKeyType.IP_EMAIL })
   @ApiOperation({ summary: 'Verify Registration otp' })
   @ApiResponse({
     status: 201,
@@ -52,6 +60,7 @@ export class AuthController {
   }
 
   @Post('forgot-password')
+  @RateLimit(5, 60, { key: RateLimitKeyType.IP_EMAIL })
   @ApiOperation({ summary: 'send otp for forgot password' })
   @ApiResponse({
     status: 201,
@@ -72,6 +81,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @RateLimit(5, 60, { key: RateLimitKeyType.IP_EMAIL })
   @HttpCode(200)
   @ApiOperation({ summary: 'Login user' })
   @ApiResponse({ status: 200, description: 'Login successful' })
@@ -90,6 +100,7 @@ export class AuthController {
   @Post('change-password')
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   changePassword(@Req() req: Express.Request, @Body() dto: ChangePasswordDto) {
     return this.authClient.changePassword(req?.user?.userId, dto);
@@ -98,6 +109,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(200)
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   logout(@Req() req: Express.Request) {
     return this.authClient.logout(req?.user?.userId);
@@ -105,6 +117,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get current logged in user' })
   @ApiResponse({
@@ -117,6 +130,7 @@ export class AuthController {
 
   @Get('users')
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get all users with pagination' })
   @ApiQuery({
@@ -144,6 +158,7 @@ export class AuthController {
 
   @Get('users/id/:userId')
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by id' })
   @ApiResponse({
@@ -156,6 +171,7 @@ export class AuthController {
 
   @Get('users/email/:email')
   @UseGuards(AuthGuard)
+  @RateLimit(20, 60, { key: RateLimitKeyType.IP_USER_ID })
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get user by email' })
   @ApiResponse({
