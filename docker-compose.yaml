@@ -25,7 +25,7 @@ services:
     volumes:
       - user-postgres-primary_data:/var/lib/postgresql/data
 
-  mongodb:
+  media_mongo_db_primary:
     image: mongo:7
     container_name: product_mongo
     ports:
@@ -34,7 +34,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: mongo
       MONGO_INITDB_ROOT_PASSWORD: mongo123
     volumes:
-      - mongo_data:/data/db
+      - media_mongo_primary_data:/data/db
     healthcheck:
       test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
@@ -195,7 +195,7 @@ services:
 volumes:
   auth-postgres-primary_data:
   user-postgres-primary_data:
-  mongo_data:
+  media_mongo_primary_data:
   auth_redis_data:
   user_redis_data:
   api_gateway_redis_data:

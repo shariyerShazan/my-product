@@ -11,7 +11,7 @@ import {
 } from '@app/common';
 
 @Controller('auth')
-export class AuthController {
+export class AuthGrpcController {
   constructor(private authService: AuthService) {}
 
   @GrpcMethod('AuthService', 'Register')

@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { UserController } from './user.controller';
+import { UserGrpcController } from './user.grpc.controller';
 import { UserService } from './user.service';
 import { UserRedisModule } from '../redis/redis.module';
 import { UserPrismaModule } from '../prisma/prisma.module';
@@ -12,7 +12,7 @@ import { KafkaModule } from '@app/kafka';
     UserPrismaModule,
     KafkaModule.register('user-service'),
   ],
-  controllers: [UserController, UserConsumer],
+  controllers: [UserGrpcController, UserConsumer],
   providers: [UserService],
 })
 export class UserModule {}

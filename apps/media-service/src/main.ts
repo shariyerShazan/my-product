@@ -5,7 +5,7 @@ import { join } from 'path';
 import { GrpcExceptionFilter } from '@app/common';
 import { AppModule } from './app.module';
 
-const grpcPort = Number(process.env.AUTH_GRPC_PORT) || 3001;
+const grpcPort = Number(process.env.MEDIA_GRPC_PORT) || 3009;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -13,8 +13,8 @@ async function bootstrap() {
   app.connectMicroservice({
     transport: Transport.GRPC,
     options: {
-      package: 'auth',
-      protoPath: join(process.cwd(), 'libs/proto-schema/src/proto/auth.proto'),
+      package: 'media',
+      protoPath: join(process.cwd(), 'libs/proto-schema/src/proto/media.proto'),
       url: `0.0.0.0:${grpcPort}`,
       loader: {
         keepCase: true,
@@ -39,7 +39,8 @@ async function bootstrap() {
   );
 
   await app.startAllMicroservices();
+
   await app.listen(grpcPort);
-  console.log(`Auth server is running on: http://localhost:${grpcPort}`);
+  console.log(`Media server is running on: http://localhost:${grpcPort}`);
 }
-bootstrap();
+void bootstrap();

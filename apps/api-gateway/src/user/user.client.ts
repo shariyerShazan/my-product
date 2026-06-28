@@ -36,7 +36,7 @@ export class UserClient implements OnModuleInit {
     options: {
       package: 'user',
       protoPath: join(process.cwd(), 'libs/proto-schema/src/proto/user.proto'),
-      url: process.env.USER_SERVICE_URL || 'localhost:3002',
+      url: process.env.USER_SERVICE_GRPC_URL || 'localhost:3002',
     },
   })
   private client: ClientGrpc;

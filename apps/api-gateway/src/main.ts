@@ -27,7 +27,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document);
 
-  const port = Number(process.env.API_GATEWAY_PORT!) || 3000;
+  const port = Number(process.env.API_GATEWAY_HTTP_PORT!) || 4000;
   await app.listen(port ?? 3000);
   console.log(
     `Api-gateway Server is running on: http://localhost:${port}/docs`,

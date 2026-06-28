@@ -1,0 +1,149 @@
+syntax = "proto3";
+
+package media;
+
+service MediaService {
+  rpc CreateMedia(CreateMediaRequest) returns (MediaResponse);
+
+  rpc GetMedia(GetMediaRequest) returns (MediaResponse);
+
+  rpc ListUserMedia(ListUserMediaRequest) returns (ListUserMediaResponse);
+
+  rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaResponse);
+
+  rpc UpdateMediaStatus(UpdateMediaStatusRequest) returns (MediaResponse);
+
+  rpc GetMediaByPath(GetMediaByPathRequest) returns (MediaResponse);
+
+  rpc Exists(ExistsRequest) returns (ExistsResponse);
+}
+
+enum MediaType {
+  MEDIA_TYPE_UNKNOWN = 0;
+  IMAGE = 1;
+  VIDEO = 2;
+  AUDIO = 3;
+  FILE = 4;
+  AVATAR = 5;
+  COVER = 6;
+}
+
+enum MediaStatus {
+  PENDING = 0;
+  PROCESSING = 1;
+  DONE = 2;
+  FAILED = 3;
+}
+
+message Media {
+  string id = 1;
+
+  string userId = 2;
+
+  MediaType type = 3;
+
+  string originalName = 4;
+
+  string fileName = 5;
+
+  string path = 6;
+
+  string originalUrl = 7;
+
+  string thumbnailUrl = 8;
+
+  string mediumUrl = 9;
+
+  string mimeType = 10;
+
+  int64 size = 11;
+
+  MediaStatus status = 12;
+
+  int32 width = 13;
+
+  int32 height = 14;
+
+  int32 duration = 15;
+
+  string createdAt = 16;
+
+  string updatedAt = 17;
+}
+
+message CreateMediaRequest {
+  string userId = 1;
+  MediaType type = 2;
+  string originalName = 3;
+  string fileName = 4;
+  string path = 5;
+  string originalUrl = 6;
+  string thumbnailUrl = 7;
+  string mediumUrl = 8;
+  string mimeType = 9;
+  int64 size = 10;
+  MediaStatus status = 11;
+  int32 width = 12;
+  int32 height = 13;
+  int32 duration = 14;
+}
+
+message GetMediaRequest {
+  string mediaId = 1;
+}
+
+message GetMediaByPathRequest {
+  string path = 1;
+}
+
+message ListUserMediaRequest {
+  string userId = 1;
+  MediaType type = 2;
+  int32 page = 3;
+  int32 limit = 4;
+}
+
+message UpdateMediaStatusRequest {
+  string mediaId = 1;
+  MediaStatus status = 2;
+  string originalUrl = 3;
+  string thumbnailUrl = 4;
+  string mediumUrl = 5;
+}
+
+message DeleteMediaRequest {
+  string mediaId = 1;
+  string userId = 2;
+}
+
+message ExistsRequest {
+  string mediaId = 1;
+}
+
+message ExistsResponse {
+  bool success = 1;
+  string message = 2;
+  bool exists = 3;
+}
+
+message MediaResponse {
+  bool success = 1;
+  string message = 2;
+  Media media = 3;
+}
+
+message ListUserMediaResponse {
+  bool success = 1;
+  string message = 2;
+
+  repeated Media media = 3;
+
+  int64 total = 4;
+  int32 page = 5;
+  int32 limit = 6;
+}
+
+message DeleteMediaResponse {
+  bool success = 1;
+  string message = 2;
+}

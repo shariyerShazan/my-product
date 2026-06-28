@@ -6,7 +6,7 @@ import { GrpcMethod } from '@nestjs/microservices';
 import { UserService } from './user.service';
 
 @Controller()
-export class UserController {
+export class UserGrpcController {
   constructor(private userService: UserService) {}
 
   @GrpcMethod('UserService', 'GetProfile')
