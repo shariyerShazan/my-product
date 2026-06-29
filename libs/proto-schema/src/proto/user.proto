@@ -25,7 +25,7 @@ service UserService {
   rpc SetOffline      (PresenceRequest)      returns (PresenceResponse);
   rpc GetOnlineStatus (PresenceRequest)      returns (PresenceResponse);
 
-  // Internal — other services call করার জন্য
+  // Internal — other services call
   rpc GetUsersByIds   (GetUsersByIdsRequest) returns (UsersListResponse);
   rpc GetFollowerIds  (GetFollowerIdsRequest)returns (FollowerIdsResponse);
 }
@@ -33,15 +33,15 @@ service UserService {
 // ── Profile Messages ──────────────────────────────
 message GetProfileRequest {
   string userId      = 1;
-  string requesterId = 2;   // কে দেখছে (privacy check)
+  string requesterId = 2;
 }
 
 message UpdateProfileRequest {
   string userId   = 1;
   string name     = 2;
   string bio      = 3;
-  string avatar   = 4;
-  string coverImg = 5;
+  string avatarMediaId = 4;
+  string coverMediaId  = 5;
   string location = 6;
   string website  = 7;
   string birthDate= 8;

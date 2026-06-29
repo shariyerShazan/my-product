@@ -11,6 +11,7 @@ import {
 import { AppModule } from './app.module';
 
 const grpcPort = Number(process.env.USER_GRPC_PORT) || 3002;
+const httpPort = Number(process.env.USER_HTTP_PORT) || 4002;
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.connectMicroservice<MicroserviceOptions>({
@@ -55,7 +56,8 @@ async function bootstrap() {
   );
 
   await app.startAllMicroservices();
-  await app.listen(grpcPort);
-  console.log(`User server is running on: http://localhost:${grpcPort}`);
+  await app.listen(httpPort);
+  console.log(`🚀 User HTTP Server: http://localhost:${httpPort}`);
+  console.log(`🚀 User gRPC Server: 0.0.0.0:${grpcPort}`);
 }
-bootstrap();
+void bootstrap();

@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { MediaModule } from './media/media.module';
 import { ProcessingModule } from './processing/processing.module';
 import { StorageModule } from './storage/storage.module';
+import { MediaRedisModule } from './redis/redis.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { StorageModule } from './storage/storage.module';
     MediaModule,
     ProcessingModule,
     StorageModule,
+    MediaRedisModule,
   ],
 })
 export class AppModule {}

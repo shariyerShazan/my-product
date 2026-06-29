@@ -42,13 +42,21 @@ export class LocalStorageService
     );
   }
 
+  private getSafePathSegment(
+    value: string | undefined,
+    fallback: string,
+  ): string {
+    const normalized = value?.toString().trim();
+    return normalized && normalized !== 'undefined' ? normalized : fallback;
+  }
+
   async saveFile(options: SaveFileOptions): Promise<SaveFileResult> {
-    const generatedName = `${uuid()}.${options.extension}`;
+    const generatedName = `${uuid()}.${this.getSafePathSegment(options.extension, 'bin')}`;
 
     const relativePath = join(
-      options.folder,
-      options.userId,
-      options.variant,
+      this.getSafePathSegment(options.folder, 'images'),
+      this.getSafePathSegment(options.userId, 'unknown'),
+      this.getSafePathSegment(options.variant, 'original'),
       generatedName,
     );
 

@@ -4,18 +4,23 @@ package media;
 
 service MediaService {
   rpc CreateMedia(CreateMediaRequest) returns (MediaResponse);
-
   rpc GetMedia(GetMediaRequest) returns (MediaResponse);
-
   rpc ListUserMedia(ListUserMediaRequest) returns (ListUserMediaResponse);
-
   rpc DeleteMedia(DeleteMediaRequest) returns (DeleteMediaResponse);
-
   rpc UpdateMediaStatus(UpdateMediaStatusRequest) returns (MediaResponse);
-
   rpc GetMediaByPath(GetMediaByPathRequest) returns (MediaResponse);
-
   rpc Exists(ExistsRequest) returns (ExistsResponse);
+  rpc GetMediaByIds(GetMediaByIdsRequest) returns(GetMediaListResponse);
+}
+
+message GetMediaByIdsRequest{
+  repeated string mediaIds = 1;
+}
+
+message GetMediaListResponse{
+  bool success = 1;
+  string message = 2;
+  repeated Media media = 3;
 }
 
 enum MediaType {
@@ -37,37 +42,21 @@ enum MediaStatus {
 
 message Media {
   string id = 1;
-
   string userId = 2;
-
   MediaType type = 3;
-
   string originalName = 4;
-
   string fileName = 5;
-
   string path = 6;
-
   string originalUrl = 7;
-
   string thumbnailUrl = 8;
-
   string mediumUrl = 9;
-
   string mimeType = 10;
-
   int64 size = 11;
-
   MediaStatus status = 12;
-
   int32 width = 13;
-
   int32 height = 14;
-
   int32 duration = 15;
-
   string createdAt = 16;
-
   string updatedAt = 17;
 }
 

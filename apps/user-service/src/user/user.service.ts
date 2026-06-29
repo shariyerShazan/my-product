@@ -1,21 +1,49 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 // user/user.service.ts
 import { KAFKA_TOPICS, KafkaService } from '@app/kafka';
-import { Injectable, Logger } from '@nestjs/common';
-import { RpcException } from '@nestjs/microservices';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Client, RpcException, Transport } from '@nestjs/microservices';
+import type { ClientGrpc } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { UserRedisService } from '../redis/redis.service';
 import { UpdateProfileDto } from '@app/common';
 import { UserPrismaService } from '../prisma/prisma.service';
+import { join } from 'path';
+
+interface MediaGrpcService {
+  getMedia(data: { mediaId: string }): any;
+  getMediaByIds(data: { mediaIds: string[] }): any;
+}
 
 @Injectable()
-export class UserService {
+export class UserService implements OnModuleInit {
   private readonly logger = new Logger(UserService.name);
+  @Client({
+    transport: Transport.GRPC,
+    options: {
+      package: 'media',
+      protoPath: join(process.cwd(), 'libs/proto-schema/src/proto/media.proto'),
+      url: process.env.MEDIA_GRPC_PORT || 'localhost:3009',
+    },
+  })
+  private client: ClientGrpc;
+
+  private mediaService: MediaGrpcService;
 
   constructor(
     private prisma: UserPrismaService,
     private redis: UserRedisService,
     private kafka: KafkaService,
   ) {}
+
+  onModuleInit() {
+    this.mediaService =
+      this.client.getService<MediaGrpcService>('MediaService');
+  }
 
   async createUser(data: { userId: string; email: string; name: string }) {
     await this.prisma.profile.upsert({
@@ -36,7 +64,6 @@ export class UserService {
 
   // ── Get Profile ───────────────────────────────
   async getProfile(userId: string, requesterId: string) {
-    // Cache check
     const cached = await this.redis.getCachedProfile(userId);
     if (cached) {
       const isFollowing =
@@ -44,7 +71,10 @@ export class UserService {
           ? await this.checkIsFollowing(requesterId, userId)
           : false;
       const isOnline = await this.redis.isOnline(userId);
-      return this.buildResponse({ ...cached, isFollowing, isOnline });
+      const [hydrated] = await this.enrichProfilesWithMedia([
+        { ...cached, isFollowing, isOnline },
+      ]);
+      return this.buildResponse(hydrated);
     }
 
     const user = await this.prisma.profile.findUnique({
@@ -65,30 +95,18 @@ export class UserService {
 
     const isOnline = await this.redis.isOnline(userId);
 
-    const profile = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      bio: user.bio || '',
-      avatar: user.avatar || '',
-      coverImg: user.coverImg || '',
-      location: user.location || '',
-      website: user.website || '',
-      birthDate: user.birthDate?.toISOString() || '',
-      followersCount: user.followersCount,
-      followingCount: user.followingCount,
-      postsCount: user.postsCount,
+    const profile = this.createProfilePayload(user, {
       isFollowing,
       isOnline,
-      createdAt: user.createdAt.toISOString(),
-    };
+    });
 
     await this.redis.cacheProfile(userId, {
       ...profile,
       isFollowing: false,
     });
 
-    return this.buildResponse(profile);
+    const [hydratedProfile] = await this.enrichProfilesWithMedia([profile]);
+    return this.buildResponse(hydratedProfile);
   }
 
   // ── Update Profile ────────────────────────────
@@ -96,40 +114,36 @@ export class UserService {
     const user = await this.prisma.profile.update({
       where: { id: userId },
       data: {
-        ...(data.name && { name: data.name }),
-        ...(data.bio && { bio: data.bio }),
-        ...(data.avatar && { avatar: data.avatar }),
-        ...(data.coverImg && { coverImg: data.coverImg }),
-        ...(data.location && { location: data.location }),
-        ...(data.website && { website: data.website }),
-        ...(data.birthDate && {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.bio !== undefined && { bio: data.bio }),
+        ...(data.avatarMediaId !== undefined && {
+          avatarMediaId: data.avatarMediaId || null,
+        }),
+        ...(data.coverMediaId !== undefined && {
+          coverMediaId: data.coverMediaId || null,
+        }),
+        ...(data.location !== undefined && { location: data.location }),
+        ...(data.website !== undefined && { website: data.website }),
+        ...(data.birthDate !== undefined && {
           birthDate: new Date(data.birthDate),
         }),
       },
     });
 
-    // Cache invalidate
     await this.redis.invalidateProfile(userId);
 
-    // Kafka event
     await this.kafka.emit(KAFKA_TOPICS.USER_PROFILE_UPDATED, {
       userId: user.id,
       name: user.name,
-      avatar: user.avatar,
+      avatarMediaId: user.avatarMediaId,
+      coverMediaId: user.coverMediaId,
     });
 
-    return this.buildResponse({
-      ...user,
-      bio: user.bio || '',
-      avatar: user.avatar || '',
-      coverImg: user.coverImg || '',
-      location: user.location || '',
-      website: user.website || '',
-      birthDate: user.birthDate?.toISOString() || '',
-      isFollowing: false,
-      isOnline: false,
-      createdAt: user.createdAt.toISOString(),
-    });
+    const [hydratedProfile] = await this.enrichProfilesWithMedia([
+      this.createProfilePayload(user, { isFollowing: false, isOnline: false }),
+    ]);
+
+    return this.buildResponse(hydratedProfile);
   }
 
   // ── Follow ────────────────────────────────────
@@ -141,7 +155,6 @@ export class UserService {
       });
     }
 
-    // Already following?
     const existing = await this.prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -172,7 +185,6 @@ export class UserService {
       }),
     ]);
 
-    // Redis cache update
     await this.redis.addFollower(targetId, followerId);
     await this.redis.invalidateProfile(targetId);
     await this.redis.invalidateProfile(followerId);
@@ -235,7 +247,6 @@ export class UserService {
       }),
     ]);
 
-    // Redis cache update
     await this.redis.removeFollower(targetId, followerId);
     await this.redis.invalidateProfile(targetId);
     await this.redis.invalidateProfile(followerId);
@@ -273,23 +284,14 @@ export class UserService {
     const userIds = follows.map((f) => f.followerId);
     const onlineSet = await this.redis.getOnlineUsers(userIds);
 
-    const users = follows.map((f) => ({
-      id: f.follower.id,
-      name: f.follower.name,
-      email: f.follower.email,
-      bio: f.follower.bio || '',
-      avatar: f.follower.avatar || '',
-      coverImg: '',
-      location: '',
-      website: '',
-      birthDate: '',
-      followersCount: f.follower.followersCount,
-      followingCount: f.follower.followingCount,
-      postsCount: f.follower.postsCount,
-      isFollowing: false,
-      isOnline: onlineSet.has(f.follower.id),
-      createdAt: f.follower.createdAt.toISOString(),
-    }));
+    const profiles = follows.map((f) =>
+      this.createProfilePayload(f.follower, {
+        isFollowing: false,
+        isOnline: onlineSet.has(f.follower.id),
+      }),
+    );
+
+    const users = await this.enrichProfilesWithMedia(profiles);
 
     return { success: true, users, total, page };
   }
@@ -314,23 +316,14 @@ export class UserService {
     const userIds = follows.map((f) => f.followingId);
     const onlineSet = await this.redis.getOnlineUsers(userIds);
 
-    const users = follows.map((f) => ({
-      id: f.following.id,
-      name: f.following.name,
-      email: f.following.email,
-      bio: f.following.bio || '',
-      avatar: f.following.avatar || '',
-      coverImg: '',
-      location: '',
-      website: '',
-      birthDate: '',
-      followersCount: f.following.followersCount,
-      followingCount: f.following.followingCount,
-      postsCount: f.following.postsCount,
-      isFollowing: true,
-      isOnline: onlineSet.has(f.following.id),
-      createdAt: f.following.createdAt.toISOString(),
-    }));
+    const profiles = follows.map((f) =>
+      this.createProfilePayload(f.following, {
+        isFollowing: true,
+        isOnline: onlineSet.has(f.following.id),
+      }),
+    );
+
+    const users = await this.enrichProfilesWithMedia(profiles);
 
     return { success: true, users, total, page };
   }
@@ -342,7 +335,6 @@ export class UserService {
     page: number,
     limit: number,
   ) {
-    // Cache check
     const cacheKey = `${query}:${page}`;
     const cached = await this.redis.getCachedSearch(cacheKey);
     if (cached) {
@@ -367,26 +359,16 @@ export class UserService {
     const userIds = users.map((u) => u.id);
     const onlineSet = await this.redis.getOnlineUsers(userIds);
 
-    // isFollowing batch check
     const followingSet = await this.getFollowingSet(requesterId, userIds);
 
-    const result = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      bio: u.bio || '',
-      avatar: u.avatar || '',
-      coverImg: '',
-      location: u.location || '',
-      website: '',
-      birthDate: '',
-      followersCount: u.followersCount,
-      followingCount: u.followingCount,
-      postsCount: u.postsCount,
-      isFollowing: followingSet.has(u.id),
-      isOnline: onlineSet.has(u.id),
-      createdAt: u.createdAt.toISOString(),
-    }));
+    const profiles = users.map((u) =>
+      this.createProfilePayload(u, {
+        isFollowing: followingSet.has(u.id),
+        isOnline: onlineSet.has(u.id),
+      }),
+    );
+
+    const result = await this.enrichProfilesWithMedia(profiles);
 
     await this.redis.cacheSearch(cacheKey, result);
 
@@ -403,7 +385,6 @@ export class UserService {
       .then((r) => r.map((f) => f.followingId));
 
     if (!myFollowingIds.length) {
-      // Fallback: popular users
       return this.getPopularUsers(userId, limit);
     }
 
@@ -428,23 +409,14 @@ export class UserService {
     const userIds = suggestions.map((u) => u.id);
     const onlineSet = await this.redis.getOnlineUsers(userIds);
 
-    const users = suggestions.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      bio: u.bio || '',
-      avatar: u.avatar || '',
-      coverImg: '',
-      location: '',
-      website: '',
-      birthDate: '',
-      followersCount: u.followersCount,
-      followingCount: u.followingCount,
-      postsCount: u.postsCount,
-      isFollowing: false,
-      isOnline: onlineSet.has(u.id),
-      createdAt: u.createdAt.toISOString(),
-    }));
+    const profiles = suggestions.map((u) =>
+      this.createProfilePayload(u, {
+        isFollowing: false,
+        isOnline: onlineSet.has(u.id),
+      }),
+    );
+
+    const users = await this.enrichProfilesWithMedia(profiles);
 
     return { success: true, users, total: users.length, page: 1 };
   }
@@ -474,23 +446,14 @@ export class UserService {
 
     const onlineSet = await this.redis.getOnlineUsers(userIds);
 
-    const result = users.map((u) => ({
-      id: u.id,
-      name: u.name,
-      email: u.email,
-      bio: u.bio || '',
-      avatar: u.avatar || '',
-      coverImg: '',
-      location: '',
-      website: '',
-      birthDate: '',
-      followersCount: u.followersCount,
-      followingCount: u.followingCount,
-      postsCount: u.postsCount,
-      isFollowing: false,
-      isOnline: onlineSet.has(u.id),
-      createdAt: u.createdAt.toISOString(),
-    }));
+    const profiles = users.map((u) =>
+      this.createProfilePayload(u, {
+        isFollowing: false,
+        isOnline: onlineSet.has(u.id),
+      }),
+    );
+
+    const result = await this.enrichProfilesWithMedia(profiles);
 
     return { success: true, users: result, total: result.length, page: 1 };
   }
@@ -546,28 +509,131 @@ export class UserService {
       orderBy: { followersCount: 'desc' },
     });
 
-    return {
-      success: true,
-      users: users.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        bio: u.bio || '',
-        avatar: u.avatar || '',
-        coverImg: '',
-        location: '',
-        website: '',
-        birthDate: '',
-        followersCount: u.followersCount,
-        followingCount: u.followingCount,
-        postsCount: u.postsCount,
+    const profiles = users.map((u) =>
+      this.createProfilePayload(u, {
         isFollowing: false,
         isOnline: false,
-        createdAt: u.createdAt.toISOString(),
-      })),
+      }),
+    );
+
+    const hydratedUsers = await this.enrichProfilesWithMedia(profiles);
+
+    return {
+      success: true,
+      users: hydratedUsers,
       total: users.length,
       page: 1,
     };
+  }
+
+  private createProfilePayload(user: any, overrides: Record<string, any> = {}) {
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      bio: user.bio || '',
+      avatarMediaId: user.avatarMediaId || null,
+      coverMediaId: user.coverMediaId || null,
+      location: user.location || '',
+      website: user.website || '',
+      birthDate: user.birthDate,
+      followersCount: user.followersCount ?? 0,
+      followingCount: user.followingCount ?? 0,
+      postsCount: user.postsCount ?? 0,
+      isFollowing: false,
+      isOnline: false,
+      createdAt: user.createdAt,
+      ...overrides,
+    };
+  }
+
+  private async enrichProfilesWithMedia<T extends Record<string, any>>(
+    profiles: T[],
+  ) {
+    const mediaIds = Array.from(
+      new Set(
+        profiles.flatMap((profile) => {
+          const ids = [profile.avatarMediaId, profile.coverMediaId].filter(
+            Boolean,
+          );
+          return ids as string[];
+        }),
+      ),
+    );
+
+    const mediaMap = await this.fetchMediaMap(mediaIds);
+
+    return profiles.map((profile) => {
+      const avatar =
+        this.resolveMediaUrl(profile.avatarMediaId, mediaMap) ||
+        profile.avatar ||
+        '';
+      const coverImg =
+        this.resolveMediaUrl(profile.coverMediaId, mediaMap) ||
+        profile.coverImg ||
+        '';
+
+      const publicProfile = { ...(profile as Record<string, any>) };
+      delete publicProfile.avatarMediaId;
+      delete publicProfile.coverMediaId;
+
+      return {
+        ...publicProfile,
+        avatar,
+        coverImg,
+        birthDate: profile.birthDate?.toISOString() || '',
+        createdAt: profile.createdAt?.toISOString() || '',
+        location: profile.location || '',
+        website: profile.website || '',
+        bio: profile.bio || '',
+      };
+    });
+  }
+
+  private async fetchMediaMap(mediaIds: string[]) {
+    if (!mediaIds.length) {
+      return new Map<string, any>();
+    }
+
+    if (!this.mediaService) {
+      return new Map<string, any>();
+    }
+
+    try {
+      const response: any = await firstValueFrom(
+        this.mediaService.getMediaByIds({ mediaIds }),
+      );
+
+      const mediaMap = new Map<string, any>();
+      for (const media of response?.media || []) {
+        if (media?.id) {
+          mediaMap.set(media.id, media);
+        }
+      }
+
+      return mediaMap;
+    } catch (error) {
+      this.logger.warn(
+        `Media hydration failed for ids ${mediaIds.join(', ')}: ${String(error)}`,
+      );
+      return new Map<string, any>();
+    }
+  }
+
+  private resolveMediaUrl(
+    mediaId: string | null | undefined,
+    mediaMap: Map<string, any>,
+  ) {
+    if (!mediaId) {
+      return '';
+    }
+
+    const media = mediaMap.get(mediaId);
+    if (!media) {
+      return '';
+    }
+
+    return media.mediumUrl || media.originalUrl || media.thumbnailUrl || '';
   }
 
   private buildResponse(profile: any) {

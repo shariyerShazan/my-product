@@ -48,12 +48,21 @@ export class AuthClient implements OnModuleInit {
     this.authService = this.client.getService<AuthGrpcService>('AuthService');
   }
 
+  private handleError(err: any): never {
+    throw new HttpException(
+      {
+        success: false,
+        message: err?.details ?? err?.message ?? 'Media Service Error',
+      },
+      HttpStatus.BAD_REQUEST,
+    );
+  }
+
   async register(data: any) {
     try {
       return await firstValueFrom(this.authService.register(data));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -61,8 +70,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.verifyRegistration(data));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -70,8 +78,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.forgotPasswordRequest(data));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -79,8 +86,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.resetPassword(data));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -94,8 +100,7 @@ export class AuthClient implements OnModuleInit {
         }),
       );
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -103,8 +108,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.login(data));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -116,8 +120,7 @@ export class AuthClient implements OnModuleInit {
         }),
       );
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -125,8 +128,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.verifyToken({ token }));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -136,8 +138,7 @@ export class AuthClient implements OnModuleInit {
         this.authService.refreshToken({ refreshToken }),
       );
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -145,8 +146,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.getUserById({ userId }));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -160,8 +160,7 @@ export class AuthClient implements OnModuleInit {
         profile,
       };
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -169,8 +168,7 @@ export class AuthClient implements OnModuleInit {
     try {
       return await firstValueFrom(this.authService.getUserByEmail({ email }));
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 
@@ -183,8 +181,7 @@ export class AuthClient implements OnModuleInit {
         }),
       );
     } catch (err: any) {
-      const message = err?.message ?? err?.details ?? JSON.stringify(err);
-      throw new HttpException({ message }, HttpStatus.BAD_REQUEST);
+      this.handleError(err);
     }
   }
 }

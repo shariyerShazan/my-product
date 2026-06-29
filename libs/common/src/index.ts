@@ -14,6 +14,10 @@ export * from './dto/auth/reset-password-dto';
 // user dto's
 export * from './dto/user/update-user.dto';
 
+// media dto's
+export * from './dto/media/update-media-status.dto';
+export * from './dto/media/upload-image.dto';
+
 //guard
 export * from './guard/auth-guard';
 

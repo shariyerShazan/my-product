@@ -1,10 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Media, MediaDocument } from '../schemas/media.schema';
 import { SaveFileResult, StorageService } from '../storage/storage.service';
 import { ImageService } from '../processing/image.service';
 import { MediaStatus, MediaType } from '@app/common';
+import { MediaRedisService } from '../redis/redis.service';
 
 type ProtoMediaType = MediaType | string;
 type ProtoMediaStatus = MediaStatus | string;
@@ -67,6 +72,7 @@ export class MediaService {
     private readonly mediaModel: Model<MediaDocument>,
     private readonly storage: StorageService,
     private readonly imageService: ImageService,
+    private readonly redis: MediaRedisService,
   ) {}
 
   async uploadImage(
@@ -75,6 +81,10 @@ export class MediaService {
     originalName: string,
     mimeType: string,
   ) {
+    if (!userId?.trim()) {
+      throw new BadRequestException('userId is required to upload media.');
+    }
+
     await this.imageService.validate(buffer, mimeType);
 
     const processed = await this.imageService.process(buffer);
@@ -140,6 +150,8 @@ export class MediaService {
         status: MediaStatus.DONE,
       });
 
+      await this.redis.setMedia(media.id, media.toObject());
+
       return {
         success: true,
 
@@ -172,6 +184,7 @@ export class MediaService {
       type: normalizeMediaType(dto.type),
       status: normalizeMediaStatus(dto.status),
     });
+    await this.redis.setMedia(media.id, media.toObject());
 
     return {
       success: true,
@@ -181,11 +194,21 @@ export class MediaService {
   }
 
   async getMedia(mediaId: string) {
+    const cached = await this.redis.getMedia<Media>(mediaId);
+
+    if (cached) {
+      return {
+        success: true,
+        message: 'Media fetched successfully.',
+        media: cached,
+      };
+    }
     const media = await this.mediaModel.findById(mediaId);
 
     if (!media) {
       throw new NotFoundException('Media not found.');
     }
+    await this.redis.setMedia(media.id, media.toObject());
 
     return {
       success: true,
@@ -247,6 +270,7 @@ export class MediaService {
     media.deletedAt = new Date();
 
     await media.save();
+    await this.redis.deleteMedia(media.id);
 
     return {
       success: true,
@@ -280,6 +304,7 @@ export class MediaService {
     });
 
     await media.save();
+    await this.redis.deleteMedia(media.id);
 
     return {
       success: true,
@@ -297,11 +322,61 @@ export class MediaService {
     if (!media) {
       throw new NotFoundException();
     }
-
+    await this.redis.setMedia(media.id, media.toObject());
     return {
       success: true,
       message: 'Media fetched successfully.',
       media,
+    };
+  }
+
+  async getMediaByIds(mediaIds: string[]) {
+    const ids = [...new Set(mediaIds.filter(Boolean))];
+
+    if (!ids.length) {
+      return {
+        success: true,
+        message: 'No media found.',
+        media: [],
+      };
+    }
+
+    const result: Media[] = [];
+
+    const missingIds: string[] = [];
+
+    for (const id of ids) {
+      const cached = await this.redis.getMedia<Media>(id);
+
+      if (cached) {
+        result.push(cached);
+      } else {
+        missingIds.push(id);
+      }
+    }
+
+    if (missingIds.length) {
+      const medias = await this.mediaModel.find({
+        _id: {
+          $in: missingIds,
+        },
+        isDeleted: false,
+        status: MediaStatus.DONE,
+      });
+
+      for (const media of medias) {
+        const plain = media.toObject();
+
+        await this.redis.setMedia(media.id, plain);
+
+        result.push(plain);
+      }
+    }
+
+    return {
+      success: true,
+      message: 'Media fetched successfully.',
+      media: result,
     };
   }
 }

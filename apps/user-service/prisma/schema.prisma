@@ -18,8 +18,10 @@ model Profile {
   email          String   @unique
   name           String
   bio            String?
-  avatar         String?
-  coverImg       String?
+
+  avatarMediaId String?
+  coverMediaId  String?
+
   location       String?
   website        String?
   birthDate      DateTime?

@@ -24,9 +24,9 @@ async function bootstrap() {
   });
 
   await app.startAllMicroservices();
-  const port = Number(process.env.NOTIFICATION_HTTP_PORT!) || 3010;
-  await app.listen(port);
-  console.log(`🚀 Notification server is running on: http://localhost:${port}`);
+  const httpPort = Number(process.env.NOTIFICATION_HTTP_PORT!) || 4010;
+  await app.listen(httpPort);
+  console.log(`🚀 Notification HTTP Server: http://localhost:${httpPort}`);
 }
 
-bootstrap();
+void bootstrap();

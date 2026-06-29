@@ -6,6 +6,7 @@ import { GrpcExceptionFilter } from '@app/common';
 import { AppModule } from './app.module';
 
 const grpcPort = Number(process.env.AUTH_GRPC_PORT) || 3001;
+const httpPort = Number(process.env.AUTH_HTTP_PORT) || 4001;
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -39,7 +40,8 @@ async function bootstrap() {
   );
 
   await app.startAllMicroservices();
-  await app.listen(grpcPort);
-  console.log(`Auth server is running on: http://localhost:${grpcPort}`);
+  await app.listen(httpPort);
+  console.log(`🚀 Auth HTTP Server: http://localhost:${httpPort}`);
+  console.log(`🚀 Auth gRPC Server: 0.0.0.0:${grpcPort}`);
 }
-bootstrap();
+void bootstrap();

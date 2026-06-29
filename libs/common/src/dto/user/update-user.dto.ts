@@ -25,18 +25,18 @@ export class UpdateProfileDto {
   bio?: string;
 
   @ApiPropertyOptional({
-    example: 'https://example.com/avatar.jpg',
+    example: 'uuid',
   })
   @IsOptional()
   @IsString()
-  avatar?: string;
+  avatarMediaId?: string;
 
   @ApiPropertyOptional({
-    example: 'https://example.com/cover.jpg',
+    example: 'uuid',
   })
   @IsOptional()
   @IsString()
-  coverImg?: string;
+  coverMediaId?: string;
 
   @ApiPropertyOptional({
     example: 'Dhaka, Bangladesh',

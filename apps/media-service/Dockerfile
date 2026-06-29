@@ -8,9 +8,7 @@ RUN npm install
 
 COPY . .
 
-RUN npx prisma generate --schema=./apps/api-gateway/prisma/schema.prisma
-
-RUN npm run build api-gateway
+RUN npm run build media-service
 
 RUN npm prune --production
 
@@ -22,9 +20,8 @@ ENV NODE_ENV=production
 
 COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/apps/api-gateway/prisma ./apps/api-gateway/prisma
 COPY --from=builder /app/dist ./dist
 
-EXPOSE 4000
+EXPOSE 3009
 
-CMD ["node", "dist/apps/api-gateway/main.js"]
+CMD ["node", "dist/apps/media-service/main.js"]

@@ -41,6 +41,10 @@ type UpdateMediaStatusRequest = {
   mediumUrl?: string;
 };
 
+type GetMediaByIdsRequest = {
+  mediaIds: string[];
+};
+
 type GetMediaByPathRequest = { path: string };
 
 @Controller()
@@ -85,5 +89,10 @@ export class MediaGrpcController {
   @GrpcMethod('MediaService', 'GetMediaByPath')
   getMediaByPath(data: GetMediaByPathRequest) {
     return this.mediaService.getMediaByPath(data.path);
+  }
+
+  @GrpcMethod('MediaService', 'GetMediaByIds')
+  getMediaByIds(data: GetMediaByIdsRequest) {
+    return this.mediaService.getMediaByIds(data.mediaIds);
   }
 }
